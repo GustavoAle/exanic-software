@@ -1156,14 +1156,22 @@ static int exanic_probe(struct pci_dev *pdev,
         dev_info(dev, "DMA address width: %u bits.\n", exanic->dma_addr_bits);
     }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
     err = pci_set_dma_mask(pdev, DMA_BIT_MASK(exanic->dma_addr_bits));
+#else
+    err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(exanic->dma_addr_bits));
+#endif
     if (err)
     {
         dev_err(dev, "pci_set_dma_mask failed: %d\n", err);
         goto err_dma_mask;
     }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
     err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(exanic->dma_addr_bits));
+#else 
+    err = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(exanic->dma_addr_bits));
+#endif
     if (err)
     {
         dev_err(dev, "pci_set_consistent_dma_mask failed: %d\n", err);
