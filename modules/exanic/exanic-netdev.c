@@ -1063,8 +1063,14 @@ static int exanic_netdev_set_mac_addr(struct net_device *ndev, void *p)
     err = exanic_set_mac_addr_regs(priv->exanic, priv->port, addr->sa_data);
     if (!err)
         err = exanic_get_mac_addr_regs(priv->exanic, priv->port, mac_addr);
+   
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
     if (!err)
         memcpy(ndev->dev_addr, mac_addr, ETH_ALEN);
+#else 
+    if (!err)
+        eth_hw_addr_set(ndev, mac_addr);
+#endif 
 
     mutex_unlock(mutex);
 
@@ -1938,8 +1944,14 @@ int exanic_netdev_alloc(struct exanic *exanic, unsigned port,
     ndev->netdev_ops = &exanic_ndos;
 
     err = exanic_get_mac_addr_regs(exanic, port, mac_addr);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
     if (!err)
         memcpy(ndev->dev_addr, mac_addr, ETH_ALEN);
+#else 
+    if (!err)
+        eth_hw_addr_set(ndev, mac_addr);
+#endif
 
     memcpy(ndev->perm_addr, exanic->port[port].orig_mac_addr, ETH_ALEN);
 
