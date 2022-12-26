@@ -333,8 +333,20 @@ static int exanic_map_tx_feedback(struct exanic *exanic,
     /* Do the mapping */
     for (off = 0; off < map_size; off += PAGE_SIZE)
     {
-        err = vm_insert_page(vma, vma->vm_start + off,
-                virt_to_page(exanic->tx_feedback_virt + off));
+        phys_addr = virt_to_phys(exanic->tx_feedback_virt + off);
+
+        err = remap_pfn_range(vma, vma->vm_start+off,
+            phys_addr >> PAGE_SHIFT, PAGE_SIZE,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+            pgprot_writecombine(vma->vm_page_prot)
+#else
+            pgprot_noncached(vma->vm_page_prot)
+#endif
+        );
+
+        //@TODO:REMOVE
+        // err = vm_insert_page(vma, vma->vm_start + off,
+        //         virt_to_page(exanic->tx_feedback_virt + off));
         if (err)
         {
             phys_addr = virt_to_phys(exanic->tx_feedback_virt + off);
@@ -445,11 +457,22 @@ static int exanic_map_rx_region(struct exanic *exanic, struct vm_area_struct *vm
     /* Do the mapping */
     for (off = 0; off < map_size; off += PAGE_SIZE)
     {
-        err = vm_insert_page(vma, vma->vm_start + off,
-                virt_to_page(rx_region_virt + off));
+        phys_addr = virt_to_phys(rx_region_virt + off);
+        
+        err = remap_pfn_range(vma, vma->vm_start+off,
+            phys_addr >> PAGE_SHIFT, PAGE_SIZE,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+            pgprot_writecombine(vma->vm_page_prot)
+#else
+            pgprot_noncached(vma->vm_page_prot)
+#endif
+        );
+
+        //@TODO:REMOVE
+        // err = vm_insert_page(vma, vma->vm_start + off,
+        //         virt_to_page(rx_region_virt + off));
         if (err)
         {
-            phys_addr = virt_to_phys(rx_region_virt + off);
             dev_err(dev, DRV_NAME
                 "%u: vm_insert_page failed for RX region "
                 "at phys: 0x%pap, virt: 0x%p\n", exanic->id,
